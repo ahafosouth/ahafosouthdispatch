@@ -52,6 +52,24 @@ body {
   min-height: 100vh;
 }
 
+/* ── KPI ENLARGED OVERLAY ── */
+.kpi-overlay {
+  position: fixed; inset: 0; background: rgba(15, 45, 82, 0.85); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+.kpi-overlay.active { opacity: 1; pointer-events: all; }
+.kpi-overlay-card {
+  background: white; width: 90%; max-width: 650px; padding: 30px; 
+  border-radius: var(--radius-lg); position: relative;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  transform: translateY(20px) scale(0.95); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.kpi-overlay.active .kpi-overlay-card { transform: translateY(0) scale(1); }
+.close-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; border: none; background: var(--surface-3); color: var(--text-secondary); padding: 6px 10px; border-radius: 4px; font-weight: 700; transition: background 0.2s; }
+.close-btn:hover { background: var(--border-strong); color: var(--text-primary); }
+
 /* ── LOADING OVERLAY ── */
 #loadingOverlay {
   position: fixed; inset: 0; background: var(--navy); z-index: 999;
@@ -104,13 +122,40 @@ body {
 .card-body { padding: 16px 18px; }
 
 /* ── KPI CARDS ── */
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px 20px; position: relative; border-top: 3px solid transparent; transition: box-shadow 0.2s; }
-.kpi-card:hover { box-shadow: var(--shadow); }
+.kpi-row { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 14px; 
+  perspective: 1000px;
+}
+
+.kpi-card { 
+  background: var(--surface); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-lg); 
+  box-shadow: var(--shadow-sm); 
+  padding: 16px 20px; 
+  position: relative; 
+  border-top: 3px solid transparent; 
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              box-shadow 0.3s ease, 
+              border-top-width 0.2s ease, 
+              background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.kpi-card:hover { 
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 12px 24px rgba(15,45,82,0.12), 0 4px 8px rgba(15,45,82,0.04); 
+  border-top-width: 5px;
+  background-color: #fafbfc; 
+}
+
 .kpi-card.k-gold { border-top-color: var(--gold); }
 .kpi-card.k-blue { border-top-color: var(--blue); }
 .kpi-card.k-amber { border-top-color: #d97706; }
 .kpi-card.k-green { border-top-color: var(--green); }
+
 .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px; }
 .kpi-value { font-size: 32px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; margin-bottom: 6px; }
 .kpi-card.k-gold .kpi-value { color: var(--gold); }
@@ -275,7 +320,7 @@ body {
 <div class="page">
 
   <div class="kpi-row">
-    <div class="kpi-card k-gold">
+    <div class="kpi-card k-gold" onclick="openKpi('transit')">
       <div class="kpi-label">Avg Transit Time</div>
       <div class="kpi-value" id="kpiAvgTransit">—<span class="kpi-unit">hrs</span></div>
       <div class="kpi-meta">
@@ -283,7 +328,7 @@ body {
         <span class="kpi-badge badge-gray">Monitoring</span>
       </div>
     </div>
-    <div class="kpi-card k-blue">
+    <div class="kpi-card k-blue" onclick="openKpi('turnaround')">
       <div class="kpi-label">Total Turnaround Time</div>
       <div class="kpi-value" id="kpiTurnaround">—<span class="kpi-unit">hrs</span></div>
       <div class="kpi-meta">
@@ -291,7 +336,7 @@ body {
         <span class="kpi-badge badge-gray">Monitoring</span>
       </div>
     </div>
-    <div class="kpi-card k-amber">
+    <div class="kpi-card k-amber" onclick="openKpi('incidents')">
       <div class="kpi-label">Incidents & Exceptions</div>
       <div class="kpi-value" id="kpiIncidents" style="color:#d97706">—</div>
       <div class="kpi-meta">
@@ -299,7 +344,7 @@ body {
         <span class="kpi-badge badge-amber">Review</span>
       </div>
     </div>
-    <div class="kpi-card k-green">
+    <div class="kpi-card k-green" onclick="openKpi('total')">
       <div class="kpi-label">Total Dispatches</div>
       <div class="kpi-value" id="kpiTotal">—</div>
       <div class="kpi-meta">
@@ -533,6 +578,14 @@ body {
 
 </div>
 
+<div id="kpiOverlay" class="kpi-overlay" onclick="closeKpi()">
+  <div class="kpi-overlay-card" onclick="event.stopPropagation()">
+    <button class="close-btn" onclick="closeKpi()">✕ Close</button>
+    <h2 id="overlayTitle" style="color:var(--navy); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">—</h2>
+    <div id="overlayBody" style="color:var(--text-secondary); line-height: 1.6;">Loading data...</div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -542,6 +595,8 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let trendChartInstance = null;
+let currentDashboardData = null; 
+let modalChartInstance = null; // Store reference to modal chart
 
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
 function updateClock() {
@@ -565,6 +620,138 @@ function hideLoader() {
   setTimeout(() => overlay.style.display = 'none', 500);
 }
 
+// ─── MODIFIED: ENHANCED KPI OVERLAY LOGIC ─────────────────────────────────────
+function openKpi(key) {
+  if (!currentDashboardData) return;
+  const s = currentDashboardData.summary || {};
+  const trend = currentDashboardData.trend || [];
+  const incidents = currentDashboardData.incidents || [];
+  const drivers = currentDashboardData.drivers || [];
+  
+  const titleEl = document.getElementById('overlayTitle');
+  const bodyEl = document.getElementById('overlayBody');
+  
+  // Cleanup any existing chart in the modal
+  if (modalChartInstance) {
+    modalChartInstance.destroy();
+    modalChartInstance = null;
+  }
+
+  let title = '';
+  let contentHtml = '';
+
+  if (key === 'transit') {
+    title = 'Average Transit Time Trend';
+    contentHtml = `
+      <div style="margin-bottom:15px; font-size: 24px; color: var(--navy); font-weight: bold;">
+        ${(s.avgTransitHrs?.toFixed(2) || '—')} <span style="font-size:14px; font-weight:normal; color:var(--text-muted)">hours</span>
+      </div>
+      <div style="height: 280px; width: 100%; position: relative;">
+        <canvas id="modalChartCanvas"></canvas>
+      </div>
+    `;
+  } else if (key === 'turnaround') {
+    title = 'Total Turnaround Time Trend';
+    contentHtml = `
+      <div style="margin-bottom:15px; font-size: 24px; color: var(--navy); font-weight: bold;">
+        ${(s.turnaroundHrs?.toFixed(2) || '—')} <span style="font-size:14px; font-weight:normal; color:var(--text-muted)">hours</span>
+      </div>
+      <div style="font-size: 11px; margin-bottom: 10px; color: var(--text-muted);">Visualized alongside core transit trends</div>
+      <div style="height: 250px; width: 100%; position: relative;">
+        <canvas id="modalChartCanvas"></canvas>
+      </div>
+    `;
+  } else if (key === 'incidents') {
+    title = 'Incident & Exception Log (Detailed)';
+    let incHtml = incidents.length ? incidents.map(inc => `
+      <div style="padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface-2);">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">${inc.meta || 'Date N/A'}</div>
+        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${inc.type || 'Unknown Event'}</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${inc.desc || 'No description provided.'}</div>
+      </div>
+    `).join('') : '<p>No incidents logged in the current data range.</p>';
+    
+    contentHtml = `
+      <div style="margin-bottom:15px; font-size: 24px; color: var(--amber); font-weight: bold;">
+        ${(s.incidentCount || '0')} <span style="font-size:14px; font-weight:normal; color:var(--text-muted)">logged events</span>
+      </div>
+      <div style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+        ${incHtml}
+      </div>
+    `;
+  } else if (key === 'total') {
+    title = 'Total Dispatches & Driver Breakdown';
+    let drvHtml = drivers.length ? drivers.map(d => `
+      <div style="margin-bottom: 12px;">
+        <div style="display:flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; font-weight: 500;">
+          <span style="color: var(--text-primary);">🚐 ${d.name}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; color: var(--navy);">${d.runs} runs</span>
+        </div>
+        <div style="height: 8px; background: var(--surface-3); border-radius: 4px; overflow: hidden;">
+          <div style="height: 100%; background: var(--green); border-radius: 4px; width: ${Math.min(100, (d.runs / (s.totalDispatches||1)) * 100)}%;"></div>
+        </div>
+      </div>
+    `).join('') : '<p>No driver data available.</p>';
+    
+    contentHtml = `
+      <div style="margin-bottom:15px; font-size: 24px; color: var(--green); font-weight: bold;">
+        ${(s.totalDispatches || '0')} <span style="font-size:14px; font-weight:normal; color:var(--text-muted)">completed runs</span>
+      </div>
+      <div style="max-height: 300px; overflow-y: auto; padding-right: 15px; margin-top: 20px;">
+        ${drvHtml}
+      </div>
+    `;
+  }
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = contentHtml;
+  document.getElementById('kpiOverlay').classList.add('active');
+
+  // If a chart needs to be rendered, initialize it after a tiny delay so the canvas exists in DOM
+  if (key === 'transit' || key === 'turnaround') {
+    setTimeout(() => {
+      const ctx = document.getElementById('modalChartCanvas').getContext('2d');
+      const labels = trend.map(r => r.date);
+      const dsData = trend.map(r => r.dsTransit);
+      const nsData = trend.map(r => r.nsTransit);
+
+      modalChartInstance = new Chart(ctx, {
+        type: key === 'transit' ? 'line' : 'bar', // Visual variation for turnaround
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Day Shift (hrs)', data: dsData,
+              borderColor: '#c8922a', backgroundColor: key === 'transit' ? 'rgba(200,146,42,0.08)' : '#c8922a',
+              pointBackgroundColor: '#c8922a', borderWidth: 2, tension: 0.4, fill: key === 'transit'
+            },
+            {
+              label: 'Night Shift (hrs)', data: nsData,
+              borderColor: '#1a56a0', backgroundColor: key === 'transit' ? 'rgba(26,86,160,0.08)' : '#1a56a0',
+              pointBackgroundColor: '#1a56a0', borderWidth: 2, tension: 0.4, fill: key === 'transit'
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { 
+            legend: { display: true, position: 'top' },
+            tooltip: { backgroundColor: '#fff', titleColor: '#0d1e33', bodyColor: '#4a5568', borderColor: '#dde2ea', borderWidth: 1 }
+          },
+          scales: {
+            x: { grid: { color: '#dde2ea' } },
+            y: { min: 4, max: 10, grid: { color: '#dde2ea' } }
+          }
+        }
+      });
+    }, 50);
+  }
+}
+
+function closeKpi() {
+  document.getElementById('kpiOverlay').classList.remove('active');
+}
+
 // ─── FETCH DATA ───────────────────────────────────────────────────────────────
 async function loadData(isRefresh = false) {
   const btn = document.getElementById('refreshBtn');
@@ -577,6 +764,7 @@ async function loadData(isRefresh = false) {
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
+    currentDashboardData = data; // Save fetched data to state
     if (!isRefresh) setLoader(90, 'RENDERING DASHBOARD...');
 
     renderDashboard(data);
